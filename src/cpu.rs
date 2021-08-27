@@ -1,3 +1,4 @@
+use super::display::Display;
 use super::opcode::Opcode;
 use std::fs::File;
 use std::io::prelude::*;
@@ -24,26 +25,28 @@ const FONT: [u8; 80] = [
     0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
 
-#[derive(Debug)]
 pub struct State {
-    pub memory: [u8; 4096],    // memory: ram access of 4 kB
-    pub display: Vec<Vec<u8>>, // display: 64 x 32 pixel monochrome display
-    pc: u16,                   // program counter: points at current instr in memory
-    i: u16,                    // index register: points at wherever in memory
-    stack: Vec<u16>,           // stack: call/return from subroutines/functions
-    vars: [u8; 16],            // register: general purpose variable registers
+    pub memory: [u8; 4096],        // memory: ram access of 4 kB
+    pub display_buf: Vec<Vec<u8>>, // display: 64 x 32 pixel monochrome display
+    pub display: Display,
+    pc: u16,         // program counter: points at current instr in memory
+    i: u16,          // index register: points at wherever in memory
+    stack: Vec<u16>, // stack: call/return from subroutines/functions
+    vars: [u8; 16],  // register: general purpose variable registers
 }
 
 impl State {
-    pub fn new() -> Self {
+    pub fn new(context: &sdl2::Sdl, scale: u32) -> Self {
         // storing the fonts in the first 10
         let mut memory = [0; 4096];
         for i in 0..80 {
             memory[i] = FONT[i];
         }
+        let mut display = Display::new(&context, 10);
         Self {
             memory,
-            display: vec![vec![0; 64]; 32],
+            display_buf: vec![vec![0; 64]; 32],
+            display,
             pc: 0x200,
             i: 0x200,
             stack: Vec::new(),
@@ -119,9 +122,12 @@ impl State {
     pub fn process(&mut self, code: Opcode) -> Result<(), String> {
         match code.c {
             0x0 => match code.nnn {
-                0x0E0 => self.display.fill(vec![0; 64]), // clear the screen
+                0x0E0 => {
+                    self.display_buf.fill(vec![0; 64]);
+                    self.display.wipe_screen()
+                } // clear the screen
                 0x0EE => self.pc = self.stack.pop().unwrap(), // return from a subroutine
-                _ => println!("not implemented"),        // exec machine lang subroutine at NNN
+                _ => println!("not implemented"),             // exec machine lang subroutine at NNN
             },
             0x1 => self.pc = code.nnn, // jump to NNN
             0x2 => {
@@ -178,12 +184,23 @@ impl State {
                 if x > 63 {
                     break;
                 }
-                let mask = 1 << 7 - col;
-                self.display[y][x] ^= spr_data & mask;
-                self.vars[0xF] = match self.display[y][x] {
-                    0 => 1,
-                    _ => 0,
+                let mask = spr_data & (1 << 7 - col);
+
+                println!("x: {} - y: {}", x, y);
+                if self.display_buf[y][x] > 0 && mask > 0 {
+                    self.vars[0xF] = 1;
+                    self.display.wipe_pixel(x as i32, y as i32);
+                    self.display_buf[y][x] ^= mask;
+                } else if self.display_buf[y][x] < 1 && mask < 1 {
+                    self.vars[0xF] = 0;
+                    self.display.wipe_pixel(x as i32, y as i32);
+                    self.display_buf[y][x] ^= mask;
+                } else {
+                    self.vars[0xF] = 0;
+                    self.display.fill_pixel(x as i32, y as i32);
+                    self.display_buf[y][x] ^= mask;
                 }
+                std::thread::sleep(std::time::Duration::from_millis(10));
             }
         }
     }

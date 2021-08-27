@@ -1,26 +1,58 @@
-// // init SDL context
-// let sdl_context = sdl2::init()?;
-// // init a copy of the the above SDL context as a video sub_system
-// let video_subsystem = sdl_context.video()?;
+use sdl2::pixels::Color;
+use sdl2::render::WindowCanvas;
+const BLACK: Color = Color::RGB(0, 0, 0);
+const WHITE: Color = Color::RGB(255, 255, 255);
 
-// // init a windowbuilder
-// let _window = video_subsystem
-//     .window("Chip8", 640, 320)
-//     .position_centered()
-//     .build()
-//     .map_err(|e| e.to_string())?;
+pub struct Display {
+    pub canvas: WindowCanvas,
+    scale: u32,
+}
 
-// let mut event_pump = sdl_context.event_pump()?;
-// 'main: loop {
-//     for event in event_pump.poll_iter() {
-//         // handle user input here
-//         match event {
-//             sdl2::event::Event::Quit { .. } => break 'main,
-//             sdl2::event::Event::KeyDown { scancode, .. } => {
-//                 println!("{:?}", scancodes(scancode))
-//             }
-//             _ => {}
-//         }
-//     }
-//     std::thread::sleep(TIMING);
-// }
+impl Display {
+    pub fn new(context: &sdl2::Sdl, scale: u32) -> Self {
+        let video_subsystem = context.video().unwrap();
+
+        let window = video_subsystem
+            .window("rust-sdl2 demo", 64 * scale, 32 * scale)
+            .position_centered()
+            .build()
+            .unwrap();
+
+        Self {
+            canvas: window.into_canvas().build().unwrap(),
+            scale,
+        }
+    }
+
+    pub fn wipe_screen(&mut self) {
+        self.canvas.set_draw_color(BLACK);
+        self.canvas.clear();
+        self.canvas.present();
+    }
+
+    pub fn fill_pixel(&mut self, x: i32, y: i32) {
+        self.canvas.set_draw_color(WHITE);
+        self.canvas
+            .fill_rect(sdl2::rect::Rect::new(
+                x * self.scale as i32,
+                y * self.scale as i32,
+                self.scale,
+                self.scale,
+            ))
+            .unwrap();
+        self.canvas.present();
+    }
+
+    pub fn wipe_pixel(&mut self, x: i32, y: i32) {
+        self.canvas.set_draw_color(BLACK);
+        self.canvas
+            .fill_rect(sdl2::rect::Rect::new(
+                x * self.scale as i32,
+                y * self.scale as i32,
+                self.scale,
+                self.scale,
+            ))
+            .unwrap();
+        self.canvas.present();
+    }
+}
