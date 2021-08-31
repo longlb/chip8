@@ -40,25 +40,3 @@ mod tests {
         assert_eq!(op.nnn, 3021);
     }
 }
-
-// fn scancodes(sc: Option<Scancode>) -> Option<u8> {
-//     match sc {
-// Some(Scancode::Num1) => Some(0x1),
-// Some(Scancode::Num2) => Some(0x2),
-// Some(Scancode::Num3) => Some(0x3),
-// Some(Scancode::Num4) => Some(0xC),
-// Some(Scancode::Q) => Some(0x4),
-// Some(Scancode::W) => Some(0x5),
-// Some(Scancode::E) => Some(0x6),
-// Some(Scancode::R) => Some(0xD),
-// Some(Scancode::A) => Some(0x7),
-// Some(Scancode::S) => Some(0x8),
-// Some(Scancode::D) => Some(0x9),
-// Some(Scancode::F) => Some(0xE),
-// Some(Scancode::Z) => Some(0xA),
-// Some(Scancode::X) => Some(0x0),
-// Some(Scancode::C) => Some(0xB),
-// Some(Scancode::V) => Some(0xF),
-//         _ => None,
-//     }
-// }
