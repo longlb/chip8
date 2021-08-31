@@ -13,7 +13,7 @@ pub fn main() -> Result<(), String> {
     // create a new state for the processor with a display
     let mut state = State::new(&sdl_context, 10);
     // load rom into the processor
-    state.load_rom("roms/IBM.ch8");
+    state.load_rom("roms/Tetris.ch8");
     // init audio loader
     let device = audio(&sdl_context)?;
 
@@ -23,7 +23,7 @@ pub fn main() -> Result<(), String> {
     'main: loop {
         // retrieve the instruction at PC and increment
         let code = state.fetch();
-        debug_print(&state, &code);
+        // debug_print(&state, &code);
         // process the opcode received at PC
         state.process(code)?;
 
@@ -58,11 +58,6 @@ pub fn main() -> Result<(), String> {
         std::thread::sleep(std::time::Duration::from_micros(1667));
     }
     Ok(())
-}
-
-fn debug_print(state: &State, code: &opcode::Opcode) {
-    println!("Opcode: {}", code);
-    println!("{}\n\n", state)
 }
 
 struct SquareWave {
@@ -103,6 +98,11 @@ fn audio(context: &sdl2::Sdl) -> Result<AudioDevice<SquareWave>, String> {
         }
     })
 }
+
+// fn debug_print(state: &State, code: &opcode::Opcode) {
+//     println!("Opcode: {}", code);
+//     println!("{}\n\n", state)
+// }
 
 fn scancodes(sc: Option<Scancode>) -> Option<u8> {
     match sc {

@@ -42,10 +42,9 @@ impl State {
         let mut item = Self {
             memory: [0; 4096],
             display_buf: [0; 2048],
-            // generate a new display window
             display: Display::new(&context, scale),
             pc: 0x200,
-            i: 0x200,
+            i: 0x0,
             stack: Vec::new(),
             vars: [0; 16],
             keys: [false; 16],
@@ -54,7 +53,7 @@ impl State {
         };
 
         // store the font into memory
-        item.paste(0, &FONT);
+        item.paste(0, &FONT, 80);
         item
     }
 
@@ -147,8 +146,8 @@ impl State {
                 0x0A => self.pause_til_key(code.x),
                 0x29 => self.i = cx as u16 * 5,
                 0x33 => self.dec_conv(self.i as usize, cx),
-                0x55 => self.paste(self.i as usize, &self.vars.clone()),
-                0x65 => self.load_regs(self.i as usize),
+                0x55 => self.paste(self.i as usize, &self.vars.clone(), code.x + 1),
+                0x65 => self.load_regs(self.i as usize, code.x + 1),
                 _ => println!("invalid command {}", code),
             },
             _ => println!("not a valid hex code"),
@@ -259,39 +258,25 @@ impl State {
         }
     }
 
-    // paste registers into memory
-    fn paste(&mut self, index: usize, arr: &[u8]) {
-        let mut curs = index;
-        for byte in arr {
-            self.memory[curs] = *byte;
-            curs += 1;
+    // paste registers V0 to Vx into memory
+    fn paste(&mut self, index: usize, arr: &[u8], vx: u8) {
+        for ind in 0..vx as usize {
+            self.memory[self.i as usize + ind] = arr[ind];
         }
     }
 
-    // paste memory into registers
-    fn load_regs(&mut self, index: usize) {
-        println!("nok");
-        println!("{:?}", self.i);
-        println!("{:?}", self.vars);
-        for i in self.i..self.i + 16 {
-            println!("{}: {}", i, self.memory[i as usize]);
-        }
-        for ind in 0..16 {
-            self.vars[ind] = self.memory[ind + index];
-        }
-        println!("ok");
-        println!("{:?}", self.i);
-        println!("{:?}", self.vars);
-        for i in self.i..self.i + 16 {
-            println!("{}: {}", i, self.memory[i as usize]);
+    // pull memory into registers V0 to Vx
+    fn load_regs(&mut self, index: usize, vx: u8) {
+        for ind in 0..vx as usize {
+            self.vars[ind] = self.memory[ind + self.i as usize];
         }
     }
 
     // load Vx into memory as digits of its value
     fn dec_conv(&mut self, index: usize, val: u8) {
         let mut val = val;
-        for i in 3..0 {
-            self.memory[index + i - 1] = val % 10;
+        for i in (0..3).rev() {
+            self.memory[self.i as usize + i] = val % 10;
             val /= 10;
         }
     }
@@ -314,3 +299,12 @@ impl std::fmt::Display for State {
         )
     }
 }
+
+// mod tests {
+//     use super::State;
+
+//     #[test]
+//     fn optest() {
+//         let mut state = State::new(&sdl_context, 10);
+//     }
+// }
