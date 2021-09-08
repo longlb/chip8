@@ -1,4 +1,7 @@
+use std::fmt;
+
 pub struct Opcode {
+    // bitfield struct representing chip8 instructions
     pub c: u8,    // nibble 1
     pub x: u8,    // nibble 2
     pub y: u8,    // nibble 3
@@ -8,6 +11,7 @@ pub struct Opcode {
 }
 
 impl Opcode {
+    // create a new Opcode from two bytes
     pub fn from(a: u8, b: u8) -> Self {
         Self {
             c: a >> 4,
@@ -15,13 +19,13 @@ impl Opcode {
             y: b >> 4,
             n: b & 0x0F,
             nn: b,
-            nnn: ((a as u16 & 0x0F) << 8) + b as u16,
+            nnn: ((a as u16 & 0x0F) << 8) | b as u16,
         }
     }
 }
 
-impl std::fmt::Display for Opcode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Opcode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:X}{:X}{:X}{:X}", self.c, self.x, self.y, self.n)
     }
 }

@@ -4,7 +4,6 @@ use sdl2::render::WindowCanvas;
 const BLACK: Color = Color::RGB(0, 0, 0);
 const WHITE: Color = Color::RGB(255, 255, 255);
 
-// manage visual display
 pub struct Display {
     canvas: WindowCanvas,
     scale: u32,
@@ -32,6 +31,7 @@ impl Display {
         self.canvas.present()
     }
 
+    // for the below presenetation will be taken care of by the CPU to prevent excessive calls
     // clear the display of any modifications
     pub fn wipe(&mut self) {
         self.canvas.set_draw_color(BLACK);

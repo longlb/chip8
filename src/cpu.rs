@@ -32,8 +32,8 @@ pub struct State {
     stack: Vec<u16>,         // stack: call/return from subroutines/functions
     vars: [u8; 16],          // register: general purpose variable registers
     keys: [bool; 16],
-    delay: u8,
-    pub sound: u8,
+    delay: u16,
+    pub sound: u16,
 }
 
 impl State {
@@ -85,6 +85,12 @@ impl State {
         }
     }
 
+    // marks a key pressed or not pressed
+    pub fn key_moved(&mut self, key: u8, pressed: bool) {
+        self.keys[key as usize - 1] = pressed;
+        // println!("{:?}", self.keys);
+    }
+
     // return the next opcode instruction at pc in memory
     pub fn fetch(&mut self) -> Opcode {
         let byte1 = self.memory[self.pc as usize];
@@ -93,13 +99,6 @@ impl State {
         Opcode::from(byte1, byte2)
     }
 
-    // marks a key pressed or not pressed
-    pub fn key_moved(&mut self, key: u8, pressed: bool) {
-        self.keys[key as usize - 1] = pressed;
-        // println!("{:?}", self.keys);
-    }
-
-    // https://github.com/mattmikolay/chip-8/wiki/CHIP%E2%80%908-Instruction-Set
     // process the given opcode instruction
     pub fn process(&mut self, code: Opcode) -> Result<(), String> {
         let cx = self.vars[code.x as usize];
@@ -139,9 +138,14 @@ impl State {
                 _ => println!("invalid command {}", code),
             },
             0xF => match code.nn {
-                0x07 => self.vars[code.x as usize] = self.delay,
-                0x15 => self.delay = cx,
-                0x18 => self.sound = cx,
+                0x07 => self.vars[code.x as usize] = (self.delay / 10) as u8,
+                0x15 => {
+                    self.delay = {
+                        println!("{}", cx);
+                        cx as u16 * 10
+                    }
+                }
+                0x18 => self.sound = cx as u16 * 10,
                 0x1E => self.i += cx as u16,
                 0x0A => self.pause_til_key(code.x),
                 0x29 => self.i = cx as u16 * 5,
@@ -226,7 +230,7 @@ impl State {
             true => 1,
             false => 0,
         };
-        test as u8 % 255
+        (test % 256) as u8
     }
 
     // subtract the values in two registers
@@ -289,22 +293,3 @@ impl State {
         }
     }
 }
-
-impl std::fmt::Display for State {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "pc: {}   i: {}\nstack: {:?}\nregisters: {:?}\n keys: {:?}\ndelay: {} sound: {}",
-            self.pc, self.i, self.stack, self.vars, self.keys, self.delay, self.sound
-        )
-    }
-}
-
-// mod tests {
-//     use super::State;
-
-//     #[test]
-//     fn optest() {
-//         let mut state = State::new(&sdl_context, 10);
-//     }
-// }
